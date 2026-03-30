@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EstateIQ</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;display:flex;height:100vh;overflow:hidden;background:#fff;color:#111;}
+body.green{background:#f0faf4;}
+
+/* SIDEBAR */
+.sidebar{width:300px;flex-shrink:0;display:flex;flex-direction:column;background:#1a1a1a;color:#fff;}
+.logo-area{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a2a2a;}
+.logo-icon{width:24px;height:24px;background:#22c55e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;}
+.logo-text{font-weight:700;font-size:  24px;;margin-left:8px;}
+.collab-row{padding:10px 12px;border-bottom:1px solid #2a2a2a;}
+.toggle-wrap{background:#252525;border-radius:8px;padding:6px 10px;display:flex;align-items:center;justify-content:space-between;}
+.toggle-label{font-size:14px;color:#888;}
+.toggle{width:32px;height:18px;border-radius:9px;cursor:pointer;position:relative;background:#d1d5db;transition:background 0.2s;}
+.toggle.on{background:#22c55e;}
+.toggle-knob{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left 0.2s;}
+.toggle.on .toggle-knob{left:16px;}
+nav{padding:8px;flex:1;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:2px;cursor:pointer;font-size:18px;color:#888;}
+.nav-item:hover,.nav-item.active{background:#2a2a2a;color:#fff;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.topbar{padding:12px 24px;display:flex;align-items:center;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;}
+.page-title{font-size:32px;font-weight:700;}
+.topbar-right{margin-left:auto;display:flex;gap:8px;}
+.icon-btn{width:32px;height:32px;border-radius:50%;border:none;background:transparent;cursor:pointer;font-size:16px;position:relative;}
+.icon-btn:hover{background:#f3f4f6;}
+.notif-badge{position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ef4444;border-radius:50%;}
+.filterbar{padding:10px 24px;display:flex;gap:10px;align-items:center;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;}
+.filter-btn{font-size:14px;padding:5px 12px;border-radius:6px;cursor:pointer;background:#f9fafb;border:1px solid #e5e7eb;color:#666;font-family:inherit;}
+.analyze-btn{font-size:14px;padding:6px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:700;margin-left:auto;background:#111;color:#fff;font-family:inherit;}
+.body{flex:1;overflow-y:auto;padding:24px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* BUTTONS */
+.btn-green{font-size:14px;padding:7px 18px;border-radius:8px;border:none;background:#22c55e;color:#fff;cursor:pointer;font-weight:700;font-family:inherit;}
+.btn-outline{font-size:14px;padding:7px 18px;border-radius:8px;cursor:pointer;background:transparent;border:1px solid #e5e7eb;color:#111;font-family:inherit;}
+.btn-sm{font-size:14px;padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-family:inherit;}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;}
+
+/* ── HOME ── */
+.greeting{text-align:center;margin-bottom:20px;}
+.greeting h1{font-size:48px;font-weight:700;margin-bottom:6px;}
+.insight-box{border-radius:20px;padding:14px 20px;max-width:1200px;margin:0 auto 20px;text-align:center;background:#f0fdf4;border:1px solid #bbf7d0;}
+.insight-label{font-size:18px;color:#22c55e;font-weight:700;margin-bottom:6px;}
+.insight-text{font-size:18px;line-height:1.5;margin-bottom:10px;color:#166534;}
+.insight-tags{display:flex;gap:6px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;}
+.insight-tag{font-size:18px;padding:3px 9px;border-radius:20px;background:#dcfce7;color:#166534;font-weight:600;}
+.insight-btns{display:flex;gap:10px;justify-content:center;}
+.section-card{border-radius:20px;padding:20px;background:#fff;border:1px solid #e5e7eb;}
+.tabs{display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:20px;}
+.tab-btn{font-size:14px;padding:8px 20px;border:none;background:transparent;cursor:pointer;color:#666;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;font-weight:500;}
+.tab-btn.active{color:#111;border-bottom:2px solid #111;font-weight:700;}
+
+/* PROPERTY CARDS */
+.prop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.prop-card{border-radius:20px ;overflow:hidden;cursor:pointer;transition:transform 0.15s;background:#fff;border:1px solid #e5e7eb;}
+.prop-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+.prop-header{padding:8px 12px;display:flex;align-items:center;gap:6px;}
+.prop-name{font-size:24px;font-weight:700;flex:1;}
+.prop-match{font-size:18px;color:#22c55e;font-weight:700;white-space:nowrap;}
+.prop-heart{font-size:18px;opacity:0.35;}
+.prop-img{height:400px;width:100%;object-fit:cover;display:block;}
+.prop-footer{padding:10px 12px;}
+.prop-tags{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.prop-tag{font-size:14px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#666;font-weight:500;}
+.prop-bottom{display:flex;align-items:center;justify-content:space-between;}
+.prop-price{font-size:18px;font-weight:700;}
+.prop-price span{font-size:14px;font-weight:400;opacity:0.55;}
+.prop-btns{display:flex;gap:6px;}
+.btn-compare{font-size:18px;padding:4px 10px;border-radius:6px;cursor:pointer;background:transparent;border:1px solid #e5e7eb;color:#666;font-family:inherit;}
+.btn-status{font-size:18px;padding:4px 10px;border-radius:6px;border:none;color:#fff;cursor:pointer;font-family:inherit;font-weight:700;}
+.footer-bar{display:flex;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:12px;color:#666;}
+.footer-link{background:none;border:none;cursor:pointer;font-size:12px;color:#666;font-family:inherit;}
+
+/* OVERLAY */
+.overlay-bg{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;}
+.overlay-bg.open{display:flex;}
+.overlay-panel{background:#fff;width:100%;max-width:680px;border-radius:12px}
+.overlay-close{float:right;background:none;border:none;font-size:24px;cursor:pointer;padding:4px 8px;color:#666;}
+.ov-img{width:100%;height:360px;object-fit:cover;display:block;}
+.ov-body{padding:20px;}
+.ov-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+.ov-price{font-size:18px;color:#22c55e;font-weight:700;margin-bottom:12px;}
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.ov-field{background:#f9fafb;padding:8px 12px;}
+.ov-field-label{font-size:18px;color:#888;margin-bottom:2px;font-weight:700; ;}
+.ov-field-val{font-size:18px;font-weight:600;}
+.ov-insight{background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;margin-bottom:16px;}
+.ov-insight-label{font-size:14px;color:#22c55e;font-weight:700;margin-bottom:4px;}
+.ov-insight-text{font-size:14px;color:#166534;line-height:1.5;}
+.ov-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.ov-tag{font-size:14px;padding:4px 10px;background:#f3f4f6;color:#444;font-weight:600;}
+.ov-footer{display:flex;gap:10px;}
+
+/* DASHBOARD */
+.dash-grid-top{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;}
+.stat-icon-wrap{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;float:right;}
+.stat-label{font-size:14px;color:#888;margin-bottom:4px;  ;letter-spacing:0.04em;font-weight:700;}
+.stat-value{font-size:32px;font-weight:700;margin-bottom:4px;}
+.stat-sub{font-size:14px;color:#22c55e;font-weight:600;}
+.stat-sub.warn{color:#f59e0b;}
+.dash-grid-mid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.dash-card-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+.dash-card-sub{font-size:18px;color:#888;margin-bottom:14px;}
+.recent-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;}
+.recent-item:last-child{border-bottom:none;}
+.recent-img{width:44px;height:44px;object-fit:cover;flex-shrink:0;}
+.recent-name{font-size:24px;font-weight:600;}
+.recent-price{font-size:18px;color:#22c55e;font-weight:700;}
+.recent-match-badge{font-size:14px;padding:2px 6px;border-radius:20px;background:#f0fdf4;color:#16a34a;display:inline-block;margin-top:2px;font-weight:700;}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:18px;}
+.activity-item:last-child{border-bottom:none;}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.ai-card{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;}
+.ai-label{font-size:18px;color:#22c55e;font-weight:700;margin-bottom:6px;}
+.ai-text{font-size:14px;color:#166534;line-height:1.5;margin-bottom:12px;}
+.consensus-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.c-name{font-size:14px;width:130px;flex-shrink:0;}
+.c-bar-bg{flex:1;background:#e5e7eb;border-radius:4px;height:6px;}
+.c-bar{height:6px;border-radius:4px;}
+.c-pct{font-size:14px;font-weight:700;width:36px;text-align:right;}
+.team-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;border-bottom:1px solid #f3f4f6;}
+.team-item:last-child{border-bottom:none;}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.team-time{margin-left:auto;color:#888;font-size:18px;}
+
+/* MAP */
+.map-search-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.map-search-input{flex:1;padding:10px 14px;border-radius:20px;border:1px solid #e5e7eb;font-size:14px;outline:none;font-family:inherit;}
+.map-type-btns{display:flex;gap:6px;}
+.map-type-btn{font-size:14px;padding:5px 12px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;color:#666;font-family:inherit;}
+.map-type-btn.active{background:#22c55e;color:#fff;border-color:#22c55e;font-weight:700;}
+.map-search-btn{padding:7px 18px;border-radius:8px;border:none;background:#111;color:#fff;font-size:14px;cursor:pointer;font-weight:700;font-family:inherit;}
+.map-container{border-radius:20px;overflow:hidden;border:1px solid #e5e7eb;height:600px;position:relative;margin-bottom:16px;}
+#leafletMap{width:100%;height:100%;}
+.map-ai-banner{position:absolute;top:12px;left:12px;right:12px;background:rgba(255,255,255,0.96);border-radius:8px;padding:8px 12px;font-size:14px;display:flex;align-items:center;gap:8px;border:1px solid #e5e7eb;z-index:1000;font-weight:500;}
+.map-ai-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;}
+.map-results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.map-table{width:100%;border-collapse:collapse;font-size:14px;}
+.map-table th{text-align:left;padding:8px 10px;color:#888;font-weight:700;border-bottom:1px solid #e5e7eb;font-size:14px;text-transform:uppercase;letter-spacing:0.04em;}
+.map-table td{padding:8px 10px;border-bottom:1px solid #f3f4f6;}
+.map-table tr:hover td{background:#f9fafb;}
+.map-table tr.highlighted td{background:#f0fdf4;}
+.rank-num{width:20px;height:20px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.rank-num.first{background:#22c55e;color:#fff;}
+.view-details-btn{font-size:14px;padding:3px 8px;border-radius:6px;border:none;background:#22c55e;color:#fff;cursor:pointer;font-family:inherit;font-weight:700;}
+.export-btn{font-size:14px;padding:6px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-family:inherit;}
+
+/* ANALYTICS */
+.analytics-banner{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px;color:#166534;}
+.analytics-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+.analytics-stat{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 18px;}
+.analytics-stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;float:right;}
+.analytics-stat-label{font-size:14px;color:#888;margin-bottom:2px; ;letter-spacing:0.04em;font-weight:700;}
+.analytics-stat-value{font-size:24px;font-weight:700;}
+.analytics-stat-sub{font-size:14px;margin-top:2px;font-weight:500;}
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.analytics-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.chart-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+.chart-sub{font-size:14px;color:#888;margin-bottom:14px;}
+.bar-chart{height:120px;   ;display:flex;align-items:flex-end;gap:6px;padding-bottom:20px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;}
+.bar-label{font-size:14px;color:#888;text-align:center;}
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-top:8px;}
+.donut-legend{font-size:14px;}
+.donut-legend-item{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-weight:500;}
+.donut-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.safety-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.safety-name{font-size:14px;width:90px;flex-shrink:0;font-weight:500;}
+.safety-bar-bg{flex:1;background:#e5e7eb;border-radius:4px;height:8px;}
+.safety-bar{height:8px;border-radius:4px;}
+.safety-val{font-size:14px;font-weight:700;width:24px;text-align:right;}
+.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;}
+.heatmap-cell{height:20px;border-radius:2px;}
+.chart-legend{display:flex;gap:16px;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:14px;color:#666;}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+
+/* NEGOTIATIONS */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;}
+.kanban-col{background:#f9fafb;border-radius:12px;padding:14px;}
+.kanban-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.kanban-col-title{font-size:14px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.06em;}
+.kanban-badge{width:20px;height:20px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.nego-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform 0.15s;}
+.nego-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.06);}
+.nego-img{width:100%;height:160px;object-fit:cover;display:block;}
+.nego-body{padding:12px;}
+.nego-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+.nego-price{font-size:14px;color:#22c55e;font-weight:700;margin-bottom:8px;}
+.nego-match{font-size:14px;padding:2px 8px;border-radius:20px;background:#f0fdf4;color:#16a34a;display:inline-block;margin-bottom:8px;font-weight:700;}
+.nego-avatars{display:flex;gap:4px;margin-bottom:8px;}
+.nego-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;}
+.nego-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.nego-info{font-size:14px;color:#888;margin-bottom:4px;}
+
+/* CHATS */
+.chat-grid{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:16px;height:calc(100vh - 140px);}
+.chat-panel{background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
+.chat-panel-title{font-size:14px;font-weight:700;padding:14px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;}
+.saved-listing-item{padding:12px 16px;border-bottom:1px solid #f3f4f6;cursor:pointer;}
+.saved-listing-item:hover,.saved-listing-item.active{background:#f0fdf4;}
+.saved-listing-name{font-size:14px;font-weight:600;}
+.saved-listing-price{font-size:14px;color:#22c55e;font-weight:700;}
+.saved-listing-match{font-size:14px;padding:2px 7px;border-radius:20px;background:#f0fdf4;color:#16a34a;display:inline-block;margin-top:3px;font-weight:700;}
+.consensus-panel-body{padding:14px 16px;flex:1;overflow-y:auto;}
+.consensus-team-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px;}
+.vote-yes{font-size:14px;padding:2px 8px;border-radius:20px;background:#f0fdf4;color:#16a34a;font-weight:700;}
+.vote-no{font-size:14px;padding:2px 8px;border-radius:20px;background:#fef2f2;color:#dc2626;font-weight:700;}
+.vote-pending{font-size:14px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#666;}
+.consensus-bar-total{height:6px;border-radius:4px;background:#e5e7eb;margin:10px 0;}
+.consensus-bar-fill{height:6px;border-radius:4px;background:#22c55e;}
+.ai-rec-box{background:#f0fdf4;border:1px solid #bbf7d0;padding:10px;margin:10px 0;font-size:14px;color:#166534;}
+.agent-status-box{background:#fef9c3;border:1px solid #fde047;padding:8px 10px;font-size:14px;color:#854d0e;}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px; }
+.chat-bubble{max-width:75%;}
+.chat-bubble.left{align-self:flex-start;}
+.chat-bubble.right{align-self:flex-end;}
+.chat-sender{font-size:14px;color:#888;margin-bottom:3px;font-weight:700;}
+.chat-sender.right-label{text-align:right;}
+.bubble-text{padding:10px 14px;font-size:14px;line-height:1.5;}
+.bubble-text.left{background:#f3f4f6;color:#111;}
+.bubble-text.right{background:#22c55e;color:#fff;}
+.ai-bubble{background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 14px;font-size:13px;color:#166534;line-height:1.5;}
+.chat-input-row{padding:10px 16px;border-top:1px solid #e5e7eb;display:flex;gap:8px;flex-shrink:0;}
+.chat-input{flex:1;padding:8px 12px;border:1px solid #e5e7eb;font-size:13px;outline:none;font-family:inherit;}
+.chat-header-bar{padding:10px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.agent-badge{font-size:14px;padding:3px 8px;border-radius:20px;background:#fef9c3;color:#854d0e;border:1px solid #fde047;font-weight:700;}
+
+
+/* SAVED LISTINGS */
+.saved-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.saved-filter-chip{font-size:18px;padding:5px 12px;border-radius:20px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;color:#666;font-family:inherit;}
+.saved-filter-chip.active{background:#22c55e;color:#fff;border-color:#22c55e;font-weight:700;}
+.saved-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.saved-card{background:#fff;border:1px solid #e5e7eb;overflow:hidden;}
+.saved-card-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}
+.saved-card-title{font-size:24px;font-weight:700;}
+.liked-badge{font-size:10px;padding:3px 8px;border-radius:20px;background:#f0fdf4;color:#16a34a;display:flex;align-items:center;gap:4px;font-weight:700;}
+.saved-img-wrap{position:relative;}
+.saved-img{width:100%;height:240px;object-fit:cover;display:block;}
+.saved-tags-overlay{position:absolute;bottom:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;}
+.saved-tag-pill{font-size:14px;padding:3px 10px;background:rgba(255,255,255,0.92);color:#111;font-weight:700;}
+.saved-card-body{padding:14px;}
+.saved-price{font-size:24px;font-weight:700;margin-bottom:4px;}
+.saved-price span{font-size:14px;font-weight:400;color:#666;}
+.saved-specs{display:flex;gap:12px;font-size:12px;color:#666;margin-bottom:6px;}
+.saved-address{font-size:14px;color:#666;margin-bottom:4px;}
+.saved-traffic{font-size:14px;color:#666;margin-bottom:10px;}
+.consensus-progress-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.consensus-label{font-size:14px;color:#888;}
+.consensus-bar-bg-sm{flex:1;height:6px;background:#e5e7eb;border-radius:4px;}
+.consensus-bar-sm{height:6px;border-radius:4px;background:#22c55e;}
+.consensus-pct-label{font-size:14px;font-weight:700;color:#22c55e;}
+.saved-actions{display:flex;gap:8px;}
+
+/* SETTINGS */
+.settings-layout{display:grid;grid-template-columns:360px 1fr 2fr;gap:20px;align-items:start;}
+.settings-nav{background:#fff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden;}
+.settings-nav-item{padding:10px 16px;font-size:18px;cursor:pointer;color:#666;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:8px;font-weight:500;}
+.settings-nav-item:last-child{border-bottom:none;}
+.settings-nav-item.active{background:#22c55e;color:#fff;font-weight:700;}
+.settings-nav-item:hover:not(.active){background:#f9fafb;}
+.settings-section{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:20px;margin-bottom:16px;}
+.settings-section-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+.settings-section-sub{font-size:18px;color:#888;margin-bottom:16px;}
+.profile-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.profile-avatar{width:44px;height:44px;border-radius:50%;background:#f0fdf4;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;}
+.change-photo{font-size:14px;color:#22c55e;cursor:pointer;margin-left:auto;font-weight:700;}
+.settings-field{margin-bottom:12px;}
+.settings-field label{display:block;font-size:14px;color:#888;margin-bottom:4px;font-weight:700;}
+.settings-input{width:100%;padding:8px 12px;border:1px solid #e5e7eb;font-size:13px;outline:none;font-family:inherit;}
+.settings-input:focus{border-color:#22c55e;}
+.team-member-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;}
+.team-member-row:last-child{border-bottom:none;}
+.member-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;}
+.member-info{flex:1;}
+.member-name{font-size:14px;font-weight:600;}
+.member-email{font-size:14px;color:#888;}
+.admin-badge{font-size:14px;padding:2px 8px;border-radius:20px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-weight:700;}
+.member-badge{font-size:14px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#666;}
+.remove-btn{font-size:14px;padding:3px 8px;border:1px solid #fecaca;background:#fff;color:#dc2626;cursor:pointer;font-family:inherit;}
+.invite-btn{width:100%;padding:8px;border:1px dashed #e5e7eb;background:#fff;font-size:12px;color:#666;cursor:pointer;margin-top:8px;text-align:center;font-family:inherit;}
+.invite-btn:hover{border-color:#22c55e;color:#22c55e;}
+.notif-pref-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6;}
+.notif-pref-row:last-child{border-bottom:none;}
+.notif-pref-info{flex:1;}
+.notif-pref-title{font-size:14px;font-weight:600;}
+.notif-pref-sub{font-size:14px;color:#888;margin-top:2px;}
+.toggle-sm{width:36px;height:20px;border-radius:10px;cursor:pointer;position:relative;flex-shrink:0;}
+.toggle-sm.on{background:#22c55e;}
+.toggle-sm.off{background:#d1d5db;}
+.toggle-sm-knob{position:absolute;top:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left 0.2s;}
+.toggle-sm.on .toggle-sm-knob{left:18px;}
+.toggle-sm.off .toggle-sm-knob{left:2px;}
+.danger-zone{background:#fff;border:1px solid #f0a0a0; border-radius:20px;padding:20px;}
+.danger-zone-title{font-size:14px;font-weight:700;color:#dc2626;margin-bottom:16px;}
+.danger-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #fef2f2;}
+.danger-row:last-child{border-bottom:none;}
+.danger-info-title{font-size:14px;font-weight:600;}
+.danger-info-sub{font-size:14px;color:#888;margin-top:2px;}
+.danger-btn{font-size:14px;padding:5px 12px;border:1px solid #fecaca;background:#fff;color:#dc2626;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;}
+
+/* NOTIFICATIONS */
+.notif-panel{position:absolute;top:0;right:0;bottom:0;width:380px;background:#fff;border-left:1px solid #e5e7eb;z-index:200;transform:translateX(100%);transition:transform 0.25s ease;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,0.08);}
+.notif-panel.open{transform:translateX(0);}
+.notif-header{padding:20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;}
+.notif-title{font-size:20px;font-weight:700;}
+.notif-close{background:none;border:none;font-size:20px;cursor:pointer;color:#666;}
+.notif-tabs-bar{display:flex;border-bottom:1px solid #e5e7eb;padding:0 16px;}
+.notif-tab{font-size:13px;padding:10px 12px;border:none;background:transparent;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;font-weight:500;}
+.notif-tab.active{color:#22c55e;border-bottom:2px solid #22c55e;font-weight:700;}
+.notif-mark{font-size:12px;color:#22c55e;cursor:pointer;padding:8px 16px;text-align:right;border-bottom:1px solid #f3f4f6;font-weight:700;}
+.notif-list{flex:1;overflow-y:auto;}
+.notif-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f3f4f6;cursor:pointer;align-items:flex-start;}
+.notif-item.unread{background:#f0fdf4;}
+.notif-item:hover{background:#f9fafb;}
+.notif-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.notif-content{flex:1;}
+.notif-item-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.notif-item-sub{font-size:12px;color:#666;margin-bottom:4px;}
+.notif-item-time{font-size:11px;color:#aaa;}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo-area">
+    <div style="display:flex;align-items:center;gap:8px;"><div class="logo-icon">E</div><span class="logo-text">EstateIQ</span></div>
+    <span style="opacity:0.4;cursor:pointer;">›</span>
+  </div>
+  <div class="collab-row">
+    <div class="toggle-wrap">
+      <span class="toggle-label">Collaborative Mode</span>
+      <div class="toggle" id="toggle" onclick="toggleTheme()"><div class="toggle-knob"></div></div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-item active" onclick="showPage('home',this)"><span>⊞</span> Home Page</div>
+    <div class="nav-item" onclick="showPage('dashboard',this)"><span>▦</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('map',this)"><span>◎</span> Map View</div>
+    <div class="nav-item" onclick="showPage('analytics',this)"><span>↗</span> Property Analytics</div>
+    <div class="nav-item" onclick="showPage('negotiations',this)"><span>⇄</span> Active Negotiations</div>
+    <div class="nav-item" onclick="showPage('chats',this)"><span>◻</span> Team Chats</div>
+    <div class="nav-item" onclick="showPage('saved',this)"><span>♡</span> Saved Listings</div>
+    <div class="nav-item" onclick="showPage('settings',this)"><span>⚙</span> Settings</div>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <span class="page-title" id="pageTitle">Home Page</span>
+    <div class="topbar-right">
+      <button class="icon-btn">🔍</button>
+      <button class="icon-btn" onclick="toggleNotif()">🔔<span class="notif-badge"></span></button>
+    </div>
+  </div>
+  <div class="filterbar" id="filterbar">
+    <span style="opacity:0.5;">🔍</span>
+    <button class="filter-btn">Target Zone ▾</button>
+    <button class="filter-btn">Functional Typology ▾</button>
+    <button class="filter-btn">Financial Constraints / Scale ▾</button>
+    <button class="analyze-btn">Analyze &amp; Match</button>
+  </div>
+
+  <div class="body">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="greeting"><h1>Hello, Arya 🤚</h1><p style="font-size:13px;color:#666;">This week, 3 new properties listings match your criteria.</p></div>
+      <div class="insight-box">
+        <div class="insight-label">🔎 Insight</div>
+        <p class="insight-text">This location is 95% within your budget. Prices in Kadiköy have increased by 4% this month — now's a good time.</p>
+        <div class="insight-tags"><span class="insight-tag">Infrastructure: ok</span><span class="insight-tag">Investment good</span><span class="insight-tag">Traffic: Medium</span></div>
+        <div class="insight-btns"><button class="btn-green">Explore Listings</button><button class="btn-outline">View Analytics</button></div>
+      </div>
+      <div class="section-card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Recommended by AI for Your Team ✦</div>
+        <p style="font-size:12px;color:#666;margin-bottom:16px;">Algorithmically ranked listings based on your team's collective safety, accessibility, and financial constraints.</p>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab(this)">Featured Listing</button>
+          <button class="tab-btn" onclick="switchTab(this)">New Apartments</button>
+          <button class="tab-btn" onclick="switchTab(this)">Office Spaces</button>
+        </div>
+        <div class="prop-grid" id="propGrid"></div>
+        <div class="footer-bar"><button class="footer-link">View Comparative Analytics</button><span>120 Properties</span></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page" id="page-dashboard">
+      <div class="dash-grid-top">
+        <div class="stat-card"><div class="stat-icon-wrap" style="background:#f0fdf4;">📌</div><div class="stat-label">Saved Things</div><div class="stat-value">12</div><div class="stat-sub">↑ 3 new this week</div></div>
+        <div class="stat-card"><div class="stat-icon-wrap" style="background:#fdf2f8;">♡</div><div class="stat-label">Listing in Budget</div><div class="stat-value">4</div><div class="stat-sub warn">⚠ 2 need action</div></div>
+        <div class="stat-card"><div class="stat-icon-wrap" style="background:#eff6ff;">👥</div><div class="stat-label">Team Consensus</div><div class="stat-value">71%</div><div class="stat-sub">↑ Improving</div></div>
+        <div class="stat-card"><div class="stat-icon-wrap" style="background:#fff7ed;">⏱</div><div class="stat-label">Next Viewing</div><div class="stat-value" style="font-size:18px;">Tomorrow</div><div class="stat-sub warn">⏰ 10:00am · Zekeriyaköy</div></div>
+      </div>
+      <div class="dash-grid-mid">
+        <div class="card">
+          <div class="dash-card-title">Recent Listing</div><div class="dash-card-sub">Last viewed by your team</div>
+          <div class="recent-item" onclick="openOverlay(0)"><img class="recent-img" src="https://images.unsplash.com/photo-1613977257363-707ba9348227?w=200&q=80"/><div><div class="recent-name">Villa in Zekeriyaköy</div><div class="recent-price">$72.00 / day</div><span class="recent-match-badge">90% match</span></div></div>
+          <div class="recent-item" onclick="openOverlay(1)"><img class="recent-img" src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=200&q=80"/><div><div class="recent-name">Loft in Kadiköy</div><div class="recent-price">$86.00 / day</div><span class="recent-match-badge">78% match</span></div></div>
+          <div class="recent-item" onclick="openOverlay(2)"><img class="recent-img" src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=200&q=80"/><div><div class="recent-name">Nordic Loft in Göktürk</div><div class="recent-price">$91.00 / day</div><span class="recent-match-badge">88% match</span></div></div>
+          <div class="recent-item" onclick="openOverlay(4)"><img class="recent-img" src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=200&q=80"/><div><div class="recent-name">Studio in Maslak</div><div class="recent-price">$86.00 / day</div><span class="recent-match-badge">62% match</span></div></div>
+        </div>
+        <div class="card">
+          <div class="dash-card-title">Recent activity</div><div class="dash-card-sub">Team actions and AI updates</div>
+          <div class="activity-item"><div class="dot" style="background:#22c55e;"></div><div><b>Ahmet</b> voted <b>Yes</b> on Villa in Zekeriyaköy</div></div>
+          <div class="activity-item"><div class="dot" style="background:#3b82f6;"></div><div><b>AI detected</b> price drop in Kadiköy — 3 new listings added</div></div>
+          <div class="activity-item"><div class="dot" style="background:#22c55e;"></div><div><b>Serra</b> scheduled a viewing for <b>March 18</b></div></div>
+          <div class="activity-item"><div class="dot" style="background:#22c55e;"></div><div><b>Emre</b> saved <b>Nordic Loft in Göktürk</b></div></div>
+          <div class="activity-item"><div class="dot" style="background:#ef4444;"></div><div><b>Studio in Maslak</b> removed — low consensus (40%)</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="ai-card"><div class="ai-label">● AI Insight</div><p class="ai-text">Your team is 91% aligned on Villa in Zekeriyaköy. A viewing is scheduled tomorrow — now is a good time to make an offer.</p><button class="btn-green" style="font-size:11px;padding:5px 12px;">View Recommendations</button></div>
+          <div class="card">
+            <div class="dash-card-title" style="margin-bottom:12px;">Consensus overview</div>
+            <div class="consensus-row"><span class="c-name">Villa Zekeriyaköy</span><div class="c-bar-bg"><div class="c-bar" style="width:91%;background:#22c55e;"></div></div><span class="c-pct" style="color:#22c55e;">91%</span></div>
+            <div class="consensus-row"><span class="c-name">Suite in Levent</span><div class="c-bar-bg"><div class="c-bar" style="width:80%;background:#3b82f6;"></div></div><span class="c-pct" style="color:#3b82f6;">80%</span></div>
+            <div class="consensus-row"><span class="c-name">Loft in Kadiköy</span><div class="c-bar-bg"><div class="c-bar" style="width:67%;background:#f59e0b;"></div></div><span class="c-pct" style="color:#f59e0b;">67%</span></div>
+            <div class="consensus-row"><span class="c-name">Studio in Maslak</span><div class="c-bar-bg"><div class="c-bar" style="width:40%;background:#ef4444;"></div></div><span class="c-pct" style="color:#ef4444;">40%</span></div>
+          </div>
+          <div class="card">
+            <div class="dash-card-title" style="margin-bottom:10px;">Team activity</div>
+            <div class="team-item"><div class="avatar" style="background:#f0fdf4;color:#16a34a;">A</div><div><div style="font-weight:600;">Arya</div><div style="color:#888;font-size:11px;">Voted Yes on Villa</div></div><span class="team-time">2h ago</span></div>
+            <div class="team-item"><div class="avatar" style="background:#eff6ff;color:#1d4ed8;">AH</div><div><div style="font-weight:600;">Ahmet</div><div style="color:#888;font-size:11px;">Scheduled a viewing</div></div><span class="team-time">Yesterday</span></div>
+            <div class="team-item"><div class="avatar" style="background:#fff7ed;color:#c2410c;">S</div><div><div style="font-weight:600;">Serra</div><div style="color:#888;font-size:11px;">Saved 2 listings</div></div><span class="team-time">2 days ago</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAP VIEW -->
+    <div class="page" id="page-map">
+      <div class="map-search-bar">
+        <input class="map-search-input" value="Maslak, Istanbul" placeholder="Search area..."/>
+        <div class="map-type-btns">
+          <button class="map-type-btn active">All Types</button>
+          <button class="map-type-btn">Apartments</button>
+          <button class="map-type-btn">Villas</button>
+          <button class="map-type-btn">Office</button>
+        </div>
+        <button class="map-search-btn">Search</button>
+      </div>
+      <div class="map-container">
+        <div class="map-ai-banner"><div class="map-ai-dot"></div><span>AI detected 3 listings matching your team's preferences in this area. Zekeriyaköy is top match.</span></div>
+        <div id="leafletMap"></div>
+      </div>
+      <div class="map-results-header"><span style="font-size:13px;font-weight:700;">Results: 5</span><button class="export-btn">Export to CSV ↓</button></div>
+      <table class="map-table">
+        <thead><tr><th>#</th><th>Property</th><th>Phones</th><th>Building</th><th>Purchase</th><th>Safety</th><th>Traffic</th><th>Heat</th><th>Location</th><th>Parking</th><th>AI Match</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr class="highlighted"><td><div class="rank-num first">1</div></td><td><div style="font-weight:700;">Studio in Maslak</div><div style="font-size:11px;color:#888;">Est. 3min drive</div></td><td><span style="color:#22c55e;font-size:12px;cursor:pointer;font-weight:700;">View Phones</span></td><td style="font-size:12px;">🛏4 🛁2 280m²</td><td style="font-size:12px;font-weight:700;">$72/day</td><td style="font-size:12px;">8.5/10</td><td style="font-size:12px;">Low</td><td style="font-size:12px;">18°C</td><td style="font-size:12px;">Maslak</td><td style="font-size:12px;">2 Garage</td><td style="font-size:12px;color:#22c55e;font-weight:700;">91%</td><td><button class="view-details-btn" onclick="openOverlay(4)">View Details</button></td></tr>
+          <tr><td><div class="rank-num">2</div></td><td><div style="font-weight:700;">Villa in Zekeriyaköy</div></td><td><span style="color:#22c55e;font-size:12px;cursor:pointer;font-weight:700;">View Phones</span></td><td style="font-size:12px;">🛏4 🛁2 160m²</td><td style="font-size:12px;font-weight:700;">$86/day</td><td style="font-size:12px;">7.2/10</td><td style="font-size:12px;">Medium</td><td style="font-size:12px;">22°C</td><td style="font-size:12px;">Zekeriyaköy</td><td style="font-size:12px;">Street</td><td style="font-size:12px;color:#22c55e;font-weight:700;">78%</td><td><button class="view-details-btn" onclick="openOverlay(0)">View Details</button></td></tr>
+          <tr><td><div class="rank-num">3</div></td><td><div style="font-weight:700;">Loft in Kadiköy</div></td><td><span style="color:#22c55e;font-size:12px;cursor:pointer;font-weight:700;">View Phones</span></td><td style="font-size:12px;">🛏4 🛁1 140m²</td><td style="font-size:12px;font-weight:700;">$91/day</td><td style="font-size:12px;">9.0/10</td><td style="font-size:12px;">Low</td><td style="font-size:12px;">17°C</td><td style="font-size:12px;">Kadiköy</td><td style="font-size:12px;">2 Garage</td><td style="font-size:12px;color:#22c55e;font-weight:700;">85%</td><td><button class="view-details-btn" onclick="openOverlay(1)">View Details</button></td></tr>
+          <tr><td><div class="rank-num">4</div></td><td><div style="font-weight:700;">Nordic Loft in Göktürk</div></td><td><span style="color:#22c55e;font-size:12px;cursor:pointer;font-weight:700;">View Phones</span></td><td style="font-size:12px;">🛏2 🛁1 160m²</td><td style="font-size:12px;font-weight:700;">$86/day</td><td style="font-size:12px;">8.0/10</td><td style="font-size:12px;">High</td><td style="font-size:12px;">24°C</td><td style="font-size:12px;">Göktürk</td><td style="font-size:12px;">None</td><td style="font-size:12px;color:#f59e0b;font-weight:700;">63%</td><td><button class="view-details-btn" onclick="openOverlay(2)">View Details</button></td></tr>
+          <tr><td><div class="rank-num">5</div></td><td><div style="font-weight:700;">Suite in Levent</div></td><td><span style="color:#22c55e;font-size:12px;cursor:pointer;font-weight:700;">View Phones</span></td><td style="font-size:12px;">🛏1 🛁1 80m²</td><td style="font-size:12px;font-weight:700;">$100/day</td><td style="font-size:12px;">8.8/10</td><td style="font-size:12px;">Medium</td><td style="font-size:12px;">21°C</td><td style="font-size:12px;">Levent</td><td style="font-size:12px;">2 Garage</td><td style="font-size:12px;color:#22c55e;font-weight:700;">88%</td><td><button class="view-details-btn" onclick="openOverlay(5)">View Details</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PROPERTY ANALYTICS -->
+    <div class="page" id="page-analytics">
+      <div class="analytics-banner"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;"></span>AI detected a 4.2% price increase in Kadiköy this month. Zekeriyaköy remains the best value match.<button class="btn-green" style="margin-left:auto;font-size:11px;">View Recommendations</button></div>
+      <div class="analytics-stats">
+        <div class="analytics-stat"><div class="analytics-stat-icon" style="background:#f0fdf4;">≡</div><div class="analytics-stat-label">Avg. Price/Day</div><div class="analytics-stat-value">$86</div><div class="analytics-stat-sub" style="color:#22c55e;">↑ 4.2% vs last month</div></div>
+        <div class="analytics-stat"><div class="analytics-stat-icon" style="background:#f0fdf4;">≡</div><div class="analytics-stat-label">Listing in Budget</div><div class="analytics-stat-value">38</div><div class="analytics-stat-sub" style="color:#22c55e;">↑ 12 new this week</div></div>
+        <div class="analytics-stat"><div class="analytics-stat-icon" style="background:#f3f4f6;">◎</div><div class="analytics-stat-label">Avg. Safety Score</div><div class="analytics-stat-value">8.1/10</div><div class="analytics-stat-sub" style="color:#22c55e;">↑ Above city average</div></div>
+        <div class="analytics-stat"><div class="analytics-stat-icon" style="background:#fff7ed;">👥</div><div class="analytics-stat-label">Team Consensus</div><div class="analytics-stat-value">%67</div><div class="analytics-stat-sub" style="color:#ef4444;">↓ 2 members undecided</div></div>
+      </div>
+      <div class="analytics-grid">
+        <div class="card">
+          <div class="chart-title">Price trend over time</div>
+          <div class="chart-sub">Average daily rental price — Istanbul districts</div>
+          <svg width="100%" height="120" viewBox="0 0 400 120">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity="0.2"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></linearGradient>
+              <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f97316" stop-opacity="0.2"/><stop offset="100%" stop-color="#f97316" stop-opacity="0"/></linearGradient>
+            </defs>
+            <polyline points="20,90 60,85 100,75 140,70 180,65 220,55 260,45 300,40 340,30 380,20" fill="none" stroke="#22c55e" stroke-width="2"/>
+            <polygon points="20,90 60,85 100,75 140,70 180,65 220,55 260,45 300,40 340,30 380,20 380,110 20,110" fill="url(#g1)"/>
+            <polyline points="20,80 60,82 100,78 140,80 180,75 220,70 260,72 300,68 340,65 380,60" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="4,2"/>
+            <polygon points="20,80 60,82 100,78 140,80 180,75 220,70 260,72 300,68 340,65 380,60 380,110 20,110" fill="url(#g2)"/>
+            <text x="20" y="118" font-size="9" fill="#aaa">Jan</text><text x="100" y="118" font-size="9" fill="#aaa">Apr</text><text x="190" y="118" font-size="9" fill="#aaa">Jul</text><text x="290" y="118" font-size="9" fill="#aaa">Oct</text><text x="370" y="118" font-size="9" fill="#aaa">Dec</text>
+          </svg>
+          <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div>Zekeriyaköy</div><div class="legend-item"><div class="legend-dot" style="background:#f97316;"></div>Kadiköy</div></div>
+        </div>
+        <div class="card">
+          <div class="chart-title">Price comparison by district</div>
+          <div class="chart-sub">Average daily rental price — Istanbul districts</div>
+          <div class="bar-chart" id="barChart"></div>
+        </div>
+      </div>
+      <div class="analytics-grid-3">
+        <div class="card">
+          <div class="chart-title">Property type</div><div class="chart-sub">Distribution of listings</div>
+          <div class="donut-wrap">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#22c55e" stroke-width="14" stroke-dasharray="75.4 188.5" stroke-dashoffset="0"/>
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#f97316" stroke-width="14" stroke-dasharray="66 198" stroke-dashoffset="-75.4"/>
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#a78bfa" stroke-width="14" stroke-dasharray="28.3 235.6" stroke-dashoffset="-141.4"/>
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#e5e7eb" stroke-width="14" stroke-dasharray="9.4 254.5" stroke-dashoffset="-169.6"/>
+            </svg>
+            <div class="donut-legend">
+              <div class="donut-legend-item"><div class="donut-dot" style="background:#22c55e;"></div>Apartment 40%</div>
+              <div class="donut-legend-item"><div class="donut-dot" style="background:#f97316;"></div>Villa 35%</div>
+              <div class="donut-legend-item"><div class="donut-dot" style="background:#a78bfa;"></div>Office 15%</div>
+              <div class="donut-legend-item"><div class="donut-dot" style="background:#e5e7eb;"></div>Other 5%</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="chart-title">Safety scores</div><div class="chart-sub">Zekeriyaköy area</div>
+          <div class="safety-row"><span class="safety-name">Seismic risk</span><div class="safety-bar-bg"><div class="safety-bar" style="width:85%;background:#22c55e;"></div></div><span class="safety-val" style="color:#22c55e;">8.5</span></div>
+          <div class="safety-row"><span class="safety-name">Flood risk</span><div class="safety-bar-bg"><div class="safety-bar" style="width:70%;background:#22c55e;"></div></div><span class="safety-val" style="color:#22c55e;">7.0</span></div>
+          <div class="safety-row"><span class="safety-name">Crime index</span><div class="safety-bar-bg"><div class="safety-bar" style="width:65%;background:#f59e0b;"></div></div><span class="safety-val" style="color:#f59e0b;">6.5</span></div>
+          <div class="safety-row"><span class="safety-name">Air quality</span><div class="safety-bar-bg"><div class="safety-bar" style="width:60%;background:#f59e0b;"></div></div><span class="safety-val" style="color:#f59e0b;">6.0</span></div>
+          <div class="safety-row"><span class="safety-name">Transport</span><div class="safety-bar-bg"><div class="safety-bar" style="width:75%;background:#22c55e;"></div></div><span class="safety-val" style="color:#22c55e;">7.5</span></div>
+        </div>
+        <div class="card">
+          <div class="chart-title">Activity heatmap</div><div class="chart-sub">Listing views by day of week</div>
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE NEGOTIATIONS -->
+    <div class="page" id="page-negotiations">
+      <div class="kanban">
+        <div class="kanban-col">
+          <div class="kanban-col-header"><span class="kanban-col-title">Interested</span><div class="kanban-badge">2</div></div>
+          <div class="nego-card" onclick="openOverlay(3)"><img class="nego-img" src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=80"/><div class="nego-body"><div class="nego-title">Garden Retreat in Rive</div><div class="nego-price">$49.00 / day</div><div class="nego-avatars"><div class="nego-avatar" style="background:#f0fdf4;color:#16a34a;">A</div><div class="nego-avatar" style="background:#eff6ff;color:#1d4ed8;">AH</div><div class="nego-avatar" style="background:#fff7ed;color:#c2410c;">S</div></div><span class="nego-match">77% match</span></div></div>
+          <div class="nego-card" onclick="openOverlay(4)"><img class="nego-img" src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80"/><div class="nego-body"><div class="nego-title">Studio in Maslak</div><div class="nego-price">$72.00 / day</div><div class="nego-avatars"><div class="nego-avatar" style="background:#f0fdf4;color:#16a34a;">A</div></div><span class="nego-match">91% match</span></div></div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header"><span class="kanban-col-title">Negotiating</span><div class="kanban-badge">1</div></div>
+          <div class="nego-card" onclick="openOverlay(1)"><img class="nego-img" src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&q=80"/><div class="nego-body"><div class="nego-title">Loft in Kadiköy</div><div class="nego-price">$86.00 / day</div><div class="nego-avatars"><div class="nego-avatar" style="background:#f0fdf4;color:#16a34a;">A</div><div class="nego-avatar" style="background:#eff6ff;color:#1d4ed8;">AH</div></div><span class="nego-match">47%</span><div class="nego-info">Viewing: March 20, 2026</div><div class="nego-actions"><button class="btn-sm" style="background:#22c55e;color:#fff;">Confirm</button><button class="btn-sm" style="background:#f3f4f6;color:#666;">Message</button></div></div></div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header"><span class="kanban-col-title">Viewing Scheduled</span><div class="kanban-badge">1</div></div>
+          <div class="nego-card" onclick="openOverlay(0)"><img class="nego-img" src="https://images.unsplash.com/photo-1613977257363-707ba9348227?w=400&q=80"/><div class="nego-body"><div class="nego-title">Villa in Zekeriyaköy</div><div class="nego-price">$100.00 / day</div><div class="nego-avatars"><div class="nego-avatar" style="background:#f0fdf4;color:#16a34a;">A</div><div class="nego-avatar" style="background:#eff6ff;color:#1d4ed8;">AH</div><div class="nego-avatar" style="background:#fff7ed;color:#c2410c;">S</div></div><div class="nego-info">Viewing: Tomorrow, 10am</div><div class="nego-actions"><button class="btn-sm" style="background:#22c55e;color:#fff;">Dismiss</button><button class="btn-sm" style="background:#f3f4f6;color:#666;">Reschedule</button></div></div></div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header"><span class="kanban-col-title">Offer Made</span><div class="kanban-badge">1</div></div>
+          <div class="nego-card" onclick="openOverlay(5)"><img class="nego-img" src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80"/><div class="nego-body"><div class="nego-title">Suite in Levent</div><div class="nego-price">$100 / day</div><div class="nego-avatars"><div class="nego-avatar" style="background:#f0fdf4;color:#16a34a;">A</div><div class="nego-avatar" style="background:#eff6ff;color:#1d4ed8;">AH</div><div class="nego-avatar" style="background:#fdf2f8;color:#9d174d;">E</div></div><span class="nego-match">80%</span><div class="nego-info">Waiting for response</div><div class="nego-actions"><button class="btn-sm" style="background:#22c55e;color:#fff;">Follow Up</button><button class="btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">Withdraw</button></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM CHATS -->
+    <div class="page" id="page-chats">
+      <div class="chat-grid">
+        <div class="chat-panel">
+          <div class="chat-panel-title">Saved Listing</div>
+          <div class="saved-listing-item active"><div class="saved-listing-name">Villa in Zekeriyaköy</div><div class="saved-listing-price">$72.00 / day</div><span class="saved-listing-match">72% match</span></div>
+          <div class="saved-listing-item"><div class="saved-listing-name">Loft in Kadiköy</div><div class="saved-listing-price">$86.00 / day</div><span class="saved-listing-match" style="background:#fff7ed;color:#c2410c;">78% match</span></div>
+          <div class="saved-listing-item"><div class="saved-listing-name">Nordic Loft in Göktürk</div><div class="saved-listing-price">$91.00 / day</div><span class="saved-listing-match">88% match</span></div>
+          <div class="saved-listing-item"><div class="saved-listing-name">Studio in Maslak</div><div class="saved-listing-price">$86.00 / day</div><span class="saved-listing-match" style="background:#fef2f2;color:#dc2626;">62% match</span></div>
+        </div>
+        <div class="chat-panel">
+          <div class="chat-panel-title">Consensus Panel</div>
+          <div class="consensus-panel-body">
+            <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:700;">Team votes — Villa in Zekeriyaköy</div>
+            <div class="consensus-team-row"><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="background:#f0fdf4;color:#16a34a;width:24px;height:24px;font-size:10px;">A</div>Arya</div><span class="vote-yes">Yes</span></div>
+            <div class="consensus-team-row"><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="background:#eff6ff;color:#1d4ed8;width:24px;height:24px;font-size:10px;">AH</div>Ahmet</div><span class="vote-yes">Yes</span></div>
+            <div class="consensus-team-row"><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="background:#fff7ed;color:#c2410c;width:24px;height:24px;font-size:10px;">S</div>Serra</div><span class="vote-pending">—</span></div>
+            <div class="consensus-team-row"><div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="background:#fdf2f8;color:#9d174d;width:24px;height:24px;font-size:10px;">E</div>Emre</div><span class="vote-no">No</span></div>
+            <div style="margin:10px 0 4px;"><div class="consensus-bar-total"><div class="consensus-bar-fill" style="width:62%;"></div></div></div>
+            <div style="font-size:11px;color:#22c55e;font-weight:700;margin-bottom:12px;">Consensus: 62%</div>
+            <div class="ai-rec-box">AI Recommendation: Zekeriyaköy is 95% within budget and matches 3rd member priorities. Suggest scheduling a viewing.</div>
+            <div class="agent-status-box" style="margin-top:8px;">Agent status: Hüsbin — observing discussion</div>
+          </div>
+        </div>
+        <div class="chat-panel">
+          <div class="chat-header-bar"><span style="font-size:13px;font-weight:700;">Team Discussion</span><span class="agent-badge">● Agent Hidden</span></div>
+          <div class="chat-messages">
+            <div class="chat-bubble left"><div class="chat-sender">Arya</div><div class="bubble-text left">I really like the Zekeriyaköy villa — the garden is perfect for the kids 🌿</div></div>
+            <div class="chat-bubble right"><div class="chat-sender right-label">Ahmet</div><div class="bubble-text right">Agreed, but commute to the office would be 45 min. Can we check Kadiköy again?</div></div>
+            <div class="chat-bubble left"><div class="chat-sender">Serra</div><div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 12px;font-size:12px;color:#166534;">Loft in Kadiköy — $86.00 / day · 78% match</div></div>
+            <div class="ai-bubble">AI Insight: Kadiköy prices rose 4% this month. Zekeriyaköy better value long-term. Let's vote on the top 2.</div>
+          </div>
+          <div class="chat-input-row"><input class="chat-input" placeholder="Type a message..."/><button class="btn-green" style="padding:8px 16px;">Send</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVED LISTINGS -->
+    <div class="page" id="page-saved">
+      <div class="saved-filter-bar">
+        <button class="saved-filter-chip active">All (5)</button>
+        <button class="saved-filter-chip">High Match</button>
+        <button class="saved-filter-chip">Team Favourites</button>
+        <button class="saved-filter-chip">Price ▾</button>
+        <button class="saved-filter-chip">Safety ▾</button>
+      </div>
+      <div class="saved-grid">
+        <div class="saved-card">
+          <div class="saved-card-header"><span class="saved-card-title">Villa in Zekeriyaköy</span><span class="liked-badge">👥 3 Liked ❤️</span></div>
+          <div class="saved-img-wrap"><img class="saved-img" src="https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80"/><div class="saved-tags-overlay"><span class="saved-tag-pill">90% match</span><span class="saved-tag-pill">Prime Location</span></div></div>
+          <div class="saved-card-body"><div class="saved-price">$72.00<span> / day</span></div><div class="saved-specs"><span>🛏 4</span><span>🛁 2</span><span>⊞ 120m²</span></div><div class="saved-address">📍 Zekeriyaköy Mah., Sariyer, Istanbul</div><div class="saved-traffic">Traffic: Low · Safety: 8.0/10</div><div class="consensus-progress-row"><span class="consensus-label">Team consensus</span><div class="consensus-bar-bg-sm"><div class="consensus-bar-sm" style="width:91%;"></div></div><span class="consensus-pct-label">%91</span></div><div class="saved-actions"><button class="btn-outline" style="flex:1;font-size:12px;padding:7px;">View Details</button><button class="btn-green" style="flex:1;">Compare</button></div></div>
+        </div>
+        <div class="saved-card">
+          <div class="saved-card-header"><span class="saved-card-title">Loft in Kadiköy</span><span class="liked-badge">👥 2 Liked ❤️</span></div>
+          <div class="saved-img-wrap"><img class="saved-img" src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80"/><div class="saved-tags-overlay"><span class="saved-tag-pill">85% match</span><span class="saved-tag-pill">City Center</span></div></div>
+          <div class="saved-card-body"><div class="saved-price">$86.00<span> / day</span></div><div class="saved-specs"><span>🛏 4</span><span>🛁 2</span><span>⊞ 120m²</span></div><div class="saved-address">📍 Moda Cad., Kadiköy, Istanbul</div><div class="saved-traffic">Traffic: Medium · Safety: 7.2/10</div><div class="consensus-progress-row"><span class="consensus-label">Team consensus</span><div class="consensus-bar-bg-sm"><div class="consensus-bar-sm" style="width:67%;background:#f59e0b;"></div></div><span class="consensus-pct-label" style="color:#f59e0b;">%67</span></div><div class="saved-actions"><button class="btn-outline" style="flex:1;font-size:12px;padding:7px;">View Details</button><button class="btn-green" style="flex:1;">Compare</button></div></div>
+        </div>
+        <div class="saved-card">
+          <div class="saved-card-header"><span class="saved-card-title">Nordic Loft in Göktürk</span><span class="liked-badge">👥 3 Liked ❤️</span></div>
+          <div class="saved-img-wrap"><img class="saved-img" src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80"/><div class="saved-tags-overlay"><span class="saved-tag-pill">90% match</span><span class="saved-tag-pill">Prime Location</span></div></div>
+          <div class="saved-card-body"><div class="saved-price">$100.00<span> / day</span></div><div class="saved-specs"><span>🛏 3</span><span>🛁 2</span><span>⊞ 190m²</span></div><div class="saved-address">📍 Göktürk Mah., Eyüpsultan, Istanbul</div><div class="saved-traffic">Traffic: Low · Safety: 9.0/10</div><div class="consensus-progress-row"><span class="consensus-label">Team consensus</span><div class="consensus-bar-bg-sm"><div class="consensus-bar-sm" style="width:80%;"></div></div><span class="consensus-pct-label">%80</span></div><div class="saved-actions"><button class="btn-outline" style="flex:1;font-size:12px;padding:7px;">View Details</button><button class="btn-green" style="flex:1;">Compare</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="settings-layout">
+        <div class="settings-nav">
+          <div class="settings-nav-item active" onclick="switchSettingsTab(this)">👤 Profile</div>
+          <div class="settings-nav-item" onclick="switchSettingsTab(this)">👥 Team</div>
+          <div class="settings-nav-item" onclick="switchSettingsTab(this)">🔔 Notifications</div>
+          <div class="settings-nav-item" onclick="switchSettingsTab(this)">⚙ Preferences</div>
+          <div class="settings-nav-item" onclick="switchSettingsTab(this)">🔒 Privacy</div>
+          <div class="settings-nav-item" onclick="switchSettingsTab(this)">💳 Billing</div>
+        </div>
+        <div>
+          <div class="settings-section">
+            <div class="settings-section-title">Profile</div>
+            <div class="settings-section-sub">Manage your personal information</div>
+            <div class="profile-header"><div class="profile-avatar">A</div><div><div style="font-size:14px;font-weight:700;">Ayse Arya Vilgenoglu</div><div style="font-size:12px;color:#888;">arya_vilgenoglu@sfu.ca</div></div><span class="change-photo">Change Photo</span></div>
+            <div class="settings-field"><label>Full Name</label><input class="settings-input" value="Ayse Arya Vilgenoglu"/></div>
+            <div class="settings-field"><label>Email</label><input class="settings-input" value="ayse_vilgenoglu@sfu.ca"/></div>
+            <div class="settings-field"><label>Phone</label><input class="settings-input" placeholder="..."/></div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-section-title">Notification preferences</div>
+            <div class="settings-section-sub">Choose what you want to be notified about</div>
+            <div class="notif-pref-row"><div class="notif-pref-info"><div class="notif-pref-title">AI price alerts</div><div class="notif-pref-sub">Get notified when prices change in your target areas</div></div><div class="toggle-sm on"><div class="toggle-sm-knob"></div></div></div>
+            <div class="notif-pref-row"><div class="notif-pref-info"><div class="notif-pref-title">Team activity</div><div class="notif-pref-sub">Votes, comments and consensus updates</div></div><div class="toggle-sm on"><div class="toggle-sm-knob"></div></div></div>
+            <div class="notif-pref-row"><div class="notif-pref-info"><div class="notif-pref-title">New listings</div><div class="notif-pref-sub">When new listings match your criteria</div></div><div class="toggle-sm on"><div class="toggle-sm-knob"></div></div></div>
+            <div class="notif-pref-row"><div class="notif-pref-info"><div class="notif-pref-title">Viewing reminders</div><div class="notif-pref-sub">24h and 1h before scheduled viewings</div></div><div class="toggle-sm on"><div class="toggle-sm-knob"></div></div></div>
+            <div class="notif-pref-row"><div class="notif-pref-info"><div class="notif-pref-title">Weekly AI summary</div><div class="notif-pref-sub">Market trends and recommendations every Monday</div></div><div class="toggle-sm off"><div class="toggle-sm-knob"></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="settings-section">
+            <div class="settings-section-title">Team Members</div>
+            <div class="settings-section-sub">Manage who can access your workspace</div>
+            <div class="team-member-row"><div class="member-avatar" style="background:#f0fdf4;color:#16a34a;">A</div><div class="member-info"><div class="member-name">Ayse Arya Vilgenoglu</div><div class="member-email">arya_vilgenoglu@sfu.ca</div></div><span class="admin-badge">Admin</span></div>
+            <div class="team-member-row"><div class="member-avatar" style="background:#eff6ff;color:#1d4ed8;">Ah</div><div class="member-info"><div class="member-name">Ahmet Yildiz</div><div class="member-email">ahmet@pland.com</div></div><span class="member-badge">Member</span><button class="remove-btn" style="margin-left:8px;">Remove</button></div>
+            <div class="team-member-row"><div class="member-avatar" style="background:#fff7ed;color:#c2410c;">S</div><div class="member-info"><div class="member-name">Serra Kaya</div><div class="member-email">serrakaya@gmail.com</div></div><span class="member-badge">Member</span><button class="remove-btn" style="margin-left:8px;">Remove</button></div>
+            <div class="team-member-row"><div class="member-avatar" style="background:#fdf2f8;color:#9d174d;">E</div><div class="member-info"><div class="member-name">Emre Demir</div><div class="member-email">emre@emrco.com</div></div><span class="member-badge">Member</span><button class="remove-btn" style="margin-left:8px;">Remove</button></div>
+            <button class="invite-btn">+ Invite team member</button>
+          </div>
+          <div class="danger-zone">
+            <div class="danger-zone-title">Danger zone</div>
+            <div class="danger-row"><div><div class="danger-info-title">Delete all saved listings</div><div class="danger-info-sub">This will permanently remove all your saved properties</div></div><button class="danger-btn">Delete Listing</button></div>
+            <div class="danger-row"><div><div class="danger-info-title">Delete account</div><div class="danger-info-sub">Permanently delete your account and all associated data</div></div><button class="danger-btn">Delete Account</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- OVERLAY -->
+  <div class="overlay-bg" id="overlayBg" onclick="closeOverlayBg(event)">
+    <div class="overlay-panel">
+      <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5e7eb;">
+        <span style="font-size:13px;font-weight:700;color:#888;">Property Details</span>
+        <button class="overlay-close" onclick="closeOverlay()">✕</button>
+      </div>
+      <img class="ov-img" id="ovImg" src="" alt=""/>
+      <div class="ov-body">
+        <div class="ov-title" id="ovTitle"></div>
+        <div class="ov-price" id="ovPrice"></div>
+        <div class="ov-grid">
+          <div class="ov-field"><div class="ov-field-label">Match Score</div><div class="ov-field-val" id="ovMatch"></div></div>
+          <div class="ov-field"><div class="ov-field-label">Status</div><div class="ov-field-val" id="ovStatus"></div></div>
+          <div class="ov-field"><div class="ov-field-label">Location</div><div class="ov-field-val" id="ovLocation"></div></div>
+          <div class="ov-field"><div class="ov-field-label">Availability</div><div class="ov-field-val">Immediate</div></div>
+        </div>
+        <div class="ov-insight"><div class="ov-insight-label">🔎 AI Insight</div><p class="ov-insight-text" id="ovInsight"></p></div>
+        <div class="ov-tags" id="ovTags"></div>
+        <div class="ov-footer"><button class="btn-green" style="flex:1;">Book Now</button><button class="btn-outline" style="flex:1;">Compare</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-header"><span class="notif-title">Notifications</span><button class="notif-close" onclick="toggleNotif()">✕</button></div>
+    <div class="notif-tabs-bar">
+      <button class="notif-tab active" onclick="switchNotifTab(this)">All (5)</button>
+      <button class="notif-tab" onclick="switchNotifTab(this)">AI Updates</button>
+      <button class="notif-tab" onclick="switchNotifTab(this)">Team</button>
+      <button class="notif-tab" onclick="switchNotifTab(this)">Agent</button>
+    </div>
+    <div class="notif-mark">Mark all as read</div>
+    <div class="notif-list">
+      <div class="notif-item unread"><div class="notif-icon" style="background:#f0fdf4;">🤖</div><div class="notif-content"><div class="notif-item-title">AI detected a price drop in Kadiköy</div><div class="notif-item-sub">3 new listings match your budget — check them now</div><div class="notif-item-time">1 hour ago</div></div><div class="notif-dot"></div></div>
+      <div class="notif-item unread"><div class="notif-icon" style="background:#eff6ff;">📅</div><div class="notif-content"><div class="notif-item-title">Viewing confirmed — Villa in Zekeriyaköy</div><div class="notif-item-sub">Tomorrow at 10:00 AM with agent Mehmet Yilmaz</div><div class="notif-item-time">2 hours ago</div></div><div class="notif-dot"></div></div>
+      <div class="notif-item unread"><div class="notif-icon" style="background:#fdf2f8;">👥</div><div class="notif-content"><div class="notif-item-title">Ahmet voted Yes on Villa in Zekeriyaköy</div><div class="notif-item-sub">Team consensus is now 91% — ready to make an offer?</div><div class="notif-item-time">3 hours ago</div></div><div class="notif-dot"></div></div>
+      <div class="notif-item"><div class="notif-icon" style="background:#fff7ed;">🏠</div><div class="notif-content"><div class="notif-item-title">New listing matches your criteria</div><div class="notif-item-sub">Nordic Loft in Göktürk — 85% match, $91/day</div><div class="notif-item-time">12 hours ago</div></div></div>
+      <div class="notif-item"><div class="notif-icon" style="background:#fef2f2;">⚠️</div><div class="notif-content"><div class="notif-item-title">Low consensus alert — Studio in Maslak</div><div class="notif-item-sub">Only 40% team agreement. Consider removing from list.</div><div class="notif-item-time">2 days ago</div></div></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const props=[
+  {title:"Villa in Zekeriyaköy",price:"$72.00/mo",status:"Best Buy",statusColor:"#22c55e",match:"74%",tags:["90% match","Transit Access","Safe Area"],img:"https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80",location:"Zekeriyaköy, Istanbul",insight:"This property is 95% within your budget. The area has seen strong price growth — team consensus is at 91%.",lat:41.1756,lng:29.0228},
+  {title:"Loft in Kadiköy",price:"$86.00/mo",status:"Tour Now",statusColor:"#3b82f6",match:"88%",tags:["85% match","Great Location","Near Metro"],img:"https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",location:"Kadiköy, Istanbul",insight:"Price dropped 4% this month. High walkability score. AI recommends scheduling a viewing soon.",lat:40.9906,lng:29.0277},
+  {title:"Nordic Loft in Göktürk",price:"$86.00/mo",status:"Best Buy",statusColor:"#22c55e",match:"91%",tags:["91% match","Premium Area","Quiet"],img:"https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80",location:"Göktürk, Istanbul",insight:"Top match for your team's criteria. Premium area with high resale value. Act fast — 3 competing offers.",lat:41.1589,lng:28.9572},
+  {title:"Garden Retreat in Rive",price:"$72.00/mo",status:"Sprinkling",statusColor:"#f59e0b",match:"79%",tags:["79% match","Garden View","Quiet Zone"],img:"https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&q=80",location:"Rive, Istanbul",insight:"Spacious garden property. Slightly above budget but team consensus is positive at 74%.",lat:41.0632,lng:29.0856},
+  {title:"Studio in Maslak",price:"$72.00/mo",status:"Tour Now",statusColor:"#3b82f6",match:"83%",tags:["83% match","City Center","Business Hub"],img:"https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80",location:"Maslak, Istanbul",insight:"Central location with excellent transport links. Good for short-term stays. Team consensus is low at 40%.",lat:41.1082,lng:29.0224},
+  {title:"Suite in Levent",price:"$72.00/mo",status:"Best Buy",statusColor:"#22c55e",match:"86%",tags:["86% match","Business Hub","High Floor"],img:"https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80",location:"Levent, Istanbul",insight:"Prime business district. High floor with panoramic views. Strong investment potential.",lat:41.0789,lng:29.0148},
+];
+
+document.getElementById("propGrid").innerHTML=props.map((p,i)=>`
+  <div class="prop-card" onclick="openOverlay(${i})">
+    <div class="prop-header"><span class="prop-name">${p.title}</span><span class="prop-match">${p.match}</span><span class="prop-heart">♡</span></div>
+    <img class="prop-img" src="${p.img}" alt="${p.title}"/>
+    <div class="prop-footer">
+      <div class="prop-tags">${p.tags.slice(0,2).map(t=>`<span class="prop-tag">${t}</span>`).join("")}</div>
+      <div class="prop-bottom">
+        <span class="prop-price">${p.price.split("/")[0]}<span>/${p.price.split("/")[1]}</span></span>
+        <div class="prop-btns"><button class="btn-compare" onclick="event.stopPropagation()">Compare</button><button class="btn-status" style="background:${p.statusColor}">${p.status}</button></div>
+      </div>
+    </div>
+  </div>`).join("");
+
+const bd=[{l:"Ataşehir",v:65},{l:"Pendik",v:55},{l:"Kadiköy",v:80},{l:"Levent",v:90},{l:"Zekeriy.",v:72,h:true},{l:"Beşiktaş",v:85},{l:"Kağit.",v:60},{l:"Şişli",v:75},{l:"Maslak",v:68}];
+document.getElementById("barChart").innerHTML=bd.map(b=>`<div class="bar-col"><div class="bar" style="height:${b.v}%;background:${b.h?"#f97316":"#e5e7eb"};"></div><div class="bar-label">${b.l}</div></div>`).join("");
+
+const hc=["#e0f2e9","#a7f3d0","#6ee7b7","#34d399","#10b981","#059669","#047857"];
+document.getElementById("heatmap").innerHTML=Array.from({length:35},()=>`<div class="heatmap-cell" style="background:${hc[Math.floor(Math.random()*hc.length)]};"></div>`).join("");
+
+function openOverlay(i){
+  const p=props[i];
+  document.getElementById("ovImg").src=p.img;
+  document.getElementById("ovTitle").textContent=p.title;
+  document.getElementById("ovPrice").textContent=p.price;
+  document.getElementById("ovMatch").textContent=p.match;
+  document.getElementById("ovStatus").textContent=p.status;
+  document.getElementById("ovLocation").textContent=p.location;
+  document.getElementById("ovInsight").textContent=p.insight;
+  document.getElementById("ovTags").innerHTML=p.tags.map(t=>`<span class="ov-tag">${t}</span>`).join("");
+  document.getElementById("overlayBg").classList.add("open");
+}
+function closeOverlay(){document.getElementById("overlayBg").classList.remove("open");}
+function closeOverlayBg(e){if(e.target.id==="overlayBg")closeOverlay();}
+
+let mapInit=false;
+function showPage(name,el){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+name).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById("pageTitle").textContent=el.textContent.trim();
+  document.getElementById("filterbar").style.display=name==="home"?"flex":"none";
+  if(name==="map"&&!mapInit){setTimeout(initMap,100);mapInit=true;}
+}
+
+function initMap(){
+  const map=L.map("leafletMap").setView([41.05,29.01],11);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap",maxZoom:18}).addTo(map);
+  const cols=["#22c55e","#3b82f6","#22c55e","#f59e0b","#3b82f6","#22c55e"];
+  props.forEach((p,i)=>{
+    const icon=L.divIcon({html:`<div style="width:32px;height:32px;border-radius:50%;background:${cols[i]};border:3px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-family:'Plus Jakarta Sans',sans-serif;">${i+1}</div>`,className:"",iconSize:[32,32],iconAnchor:[16,16]});
+    L.marker([p.lat,p.lng],{icon}).addTo(map).bindPopup(`<div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:180px;padding:4px;"><div style="font-weight:700;font-size:13px;margin-bottom:4px;">${p.title}</div><div style="font-size:12px;color:#22c55e;font-weight:700;margin-bottom:4px;">${p.price}</div><div style="font-size:11px;color:#666;">Match: <b style="color:#22c55e;">${p.match}</b> · ${p.location}</div></div>`);
+  });
+}
+
+function switchTab(btn){document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");}
+function switchSettingsTab(el){document.querySelectorAll(".settings-nav-item").forEach(i=>i.classList.remove("active"));el.classList.add("active");}
+let isGreen=false;
+function toggleTheme(){isGreen=!isGreen;document.body.className=isGreen?"green":"";document.getElementById("toggle").className="toggle"+(isGreen?" on":"");}
+function toggleNotif(){document.getElementById("notifPanel").classList.toggle("open");}
+function switchNotifTab(btn){document.querySelectorAll(".notif-tab").forEach(b=>b.classList.remove("active"));btn.classList.add("active");}
+</script>
+</body>
+</html>
